@@ -3,16 +3,16 @@
   hosts: nodos
   become: yes
   vars:
-    zabbix_server_ip: "IP_DEL_SERVIDOR_ZABBIX"
+    zabbix_server_ip: "192.168.1.103"
     zabbix_agent_version: "7.0"  # O la versión LTS que utilices
-    zabbix_api_url: "http://{{ 192.168.1.103 }}/zabbix"
+    zabbix_api_url: "http://{{ zabbix_server_ip }}/zabbix"
     zabbix_api_user: "Admin"     # Usuario administrador de Zabbix
     zabbix_api_pass: "Churrita10."    # Contraseña de la API de Zabbix
 
   tasks:
     - name: Instalar repositorios oficiales de Zabbix (Debian/Ubuntu)
       ansible.builtin.apt:
-        deb: "https://repo.zabbix.com/zabbix/{{ zabbix_agent_version }}/ubuntu/pool/main/z/zabbix-release/zabbix-release_{{ zabbix_agent_version }}-1+ubuntu{{ ansible_distribution_version }}_all.deb"
+        deb: "https://repo.zabbix.com/zabbix/{{ zabbix_agent_version }}/ubuntu/pool/main/z/zabbix-release/zabbix-release_{{ zabbix_agent_version }}-1+ubuntu{{ ansible_distribution_release }}_all.deb"
         state: present
       when: ansible_os_family == 'Debian'
 
