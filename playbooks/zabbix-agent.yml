@@ -81,7 +81,6 @@
     # -------------------------
     # REGISTRO EN ZABBIX (API)
     # -------------------------
-    block:
     - name: Registrar host en el servidor Zabbix
       community.zabbix.zabbix_host:
         server_url: "{{ zabbix_api_url }}"
