@@ -19,31 +19,17 @@
     # -------------------------
     # CONFIGURACIÓN REPOSITORIO DEBIAN/UBUNTU
     # -------------------------
-      - name: Instalar repositorio de Zabbix (Debian/Ubuntu)
-        block:
-          - name: Descargar paquete de repositorio de Zabbix
-            ansible.builtin.get_url:
-              url: "{{ zabbix_deb_repo_url }}"
-              dest: "/tmp/zabbix-release.deb"
-              mode: '0644'
+- name: Configurar repositorio en Debian/Ubuntu
+  block:
+        - name: Instalar repositorio de Zabbix (Debian/Ubuntu)
+          ansible.builtin.apt:
+            deb: "{{ zabbix_deb_repo_url }}"
+            state: present
 
-          - name: Instalar paquete de repositorio de Zabbix
-            ansible.builtin.apt:
-              deb: "/tmp/zabbix-release.deb"
-              state: present
-
-          - name: Actualizar caché de apt
-            ansible.builtin.apt:
-              update_cache: yes
-        when: ansible_os_family == "Debian"
-        ansible.builtin.apt:
-          deb: "{{ zabbix_deb_repo_url }}"
-          state: present
-
-      - name: Actualizar caché de apt
-        ansible.builtin.apt:
-          update_cache: yes
-        when: ansible_os_family == "Debian"
+        - name: Actualizar caché de apt
+          ansible.builtin.apt:
+            update_cache: yes
+  when: ansible_os_family == "Debian"
 
     # -------------------------
     # CONFIGURACIÓN REPOSITORIO REDHAT/CENTOS/ROCKY
