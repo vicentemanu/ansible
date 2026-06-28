@@ -16,15 +16,16 @@
 
   tasks:
 
-    # -------------------------
+        # -------------------------
     # DOWNLOAD DEBIAN
     # -------------------------
     - name: Descargar Zabbix Agent 2 (Debian/Ubuntu)
       ansible.builtin.get_url:
         url: "{{ zabbix_deb_url }}"
-        dest: "{{ zabbix_pkg_path }}zabbix-release_latest_{{ zabbix_version }}+ubuntu{{ ansible_distribution_version }}_all.deb" #nueva
+        dest: "{{ zabbix_pkg_path }}" # Guardará automáticamente con el nombre real del archivo remoto
         mode: '0644'
       when: ansible_os_family == "Debian"
+      register: deb_download # Registramos el resultado para saber el nombre exacto del archivo
 
     # -------------------------
     # DOWNLOAD REDHAT
@@ -35,15 +36,17 @@
         dest: "{{ zabbix_pkg_path }}"
         mode: '0644'
       when: ansible_os_family == "RedHat"
+      register: rpm_download
 
     # -------------------------
     # INSTALL DEBIAN
     # -------------------------
     - name: Instalar Zabbix Agent 2 en Debian/Ubuntu
       ansible.builtin.apt:
-        deb: "{{ zabbix_pkg_path }}zabbix-release_latest_{{ zabbix_version }}+ubuntu{{ ansible_distribution_version }}_all.deb"
+        deb: "{{ deb_download.dest }}" # Usa dinámicamente la ruta exacta donde se guardó el archivo
         state: present
-      when: ansible_os_family == "Debian"
+      when: ansible_os_family == "Debian" and deb_download.changed
+
 
     # -------------------------
     # INSTALL REDHAT
