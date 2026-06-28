@@ -1,13 +1,14 @@
 ---
-- name: Instalar y configurar Zabbix Agent en Linux y registrar en el servidor
+- name: Instalar Zabbix Agent 2 en Linux (Debian + RedHat) y registrar en Zabbix
   hosts: nodos
   become: yes
+
   vars:
+    zabbix_version: "7.0"
     zabbix_server_ip: "192.168.1.103"
-    zabbix_agent_version: "7.0"  # O la versión LTS que utilices
     zabbix_api_url: "http://{{ zabbix_server_ip }}/zabbix"
-    zabbix_api_user: "Admin"     # Usuario administrador de Zabbix
-    zabbix_api_pass: "Churrita10."    # Contraseña de la API de Zabbix
+    zabbix_api_user: "Admin"
+    zabbix_api_pass: "Churrita10."
     zabbix_deb_url: "https://repo.zabbix.com/zabbix/{{ zabbix_version }}/ubuntu/pool/main/z/zabbix/zabbix-agent2_{{ zabbix_version }}-1+ubuntu{{ ansible_distribution_release }}_amd64.deb"
     zabbix_rpm_url: "https://repo.zabbix.com/zabbix/{{ zabbix_version }}/rhel/{{ ansible_distribution_major_version }}/x86_64/zabbix-agent2-{{ zabbix_version }}-1.el{{ ansible_distribution_major_version }}.x86_64.rpm"
 
