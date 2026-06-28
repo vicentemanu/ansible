@@ -12,13 +12,13 @@
   tasks:
     - name: Instalar repositorios oficiales de Zabbix (Debian/Ubuntu)
       ansible.builtin.apt:
-        deb: "https://zabbix.com/{{ zabbix_agent_version }}/ubuntu/pool/main/z/zabbix-release/zabbix-release_{{ zabbix_agent_version }}-1+ubuntu{{ ansible_distribution_version | split('.') | first }}.04_all.deb"
+        deb: "https://repo.zabbix.com/zabbix/{{ zabbix_agent_version }}/ubuntu/pool/main/z/zabbix-release/zabbix-release_{{ zabbix_agent_version }}-1+ubuntu{{ ansible_distribution_version | split('.') | first }}.04_all.deb"
         state: present
       when: ansible_os_family == 'Debian'
 
     - name: Instalar repositorios oficiales de Zabbix (RHEL/AlmaLinux/Rocky)
       ansible.builtin.yum:
-        name: "https://zabbix.com/{{ zabbix_agent_version }}/rhel/{{ ansible_distribution_version | split('.') | first }}/x86_64/zabbix-release-{{ zabbix_agent_version }}-1.el{{ ansible_distribution_version | split('.') | first }}.noarch.rpm"
+        name: "https://repo.repo.zabbix.com/zabbix/{{ zabbix_agent_version }}/rhel/{{ ansible_distribution_version | split('.') | first }}/x86_64/zabbix-release-{{ zabbix_agent_version }}-1.el{{ ansible_distribution_version | split('.') | first }}.noarch.rpm"
         state: present
       when: ansible_os_family == 'RedHat'
 
