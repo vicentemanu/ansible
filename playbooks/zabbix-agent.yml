@@ -1,0 +1,68 @@
+---
+- name: Instalar y configurar Zabbix Agent en Linux y registrar en el servidor
+  hosts: nodos
+  become: yes
+  vars:
+    zabbix_server_ip: "IP_DEL_SERVIDOR_ZABBIX"
+    zabbix_agent_version: "7.0"  # O la versión LTS que utilices
+    zabbix_api_url: "http://{{ 192.168.1.103 }}/zabbix"
+    zabbix_api_user: "Admin"     # Usuario administrador de Zabbix
+    zabbix_api_pass: "Churrita10."    # Contraseña de la API de Zabbix
+
+  tasks:
+    - name: Instalar repositorios oficiales de Zabbix (Debian/Ubuntu)
+      ansible.builtin.apt:
+        deb: "https://zabbix.com{{ zabbix_agent_version }}/ubuntu/pool/main/z/zabbix-release/zabbix-release_{{ zabbix_agent_version }}-1+ubuntu{{ ansible_distribution_version | split('.') | first }}.04_all.deb"
+        state: present
+      when: ansible_os_family == 'Debian'
+
+    - name: Instalar repositorios oficiales de Zabbix (RHEL/AlmaLinux/Rocky)
+      ansible.builtin.yum:
+        name: "https://zabbix.com{{ zabbix_agent_version }}/rhel/{{ ansible_distribution_version | split('.') | first }}/x86_64/zabbix-release-{{ zabbix_agent_version }}-1.el{{ ansible_distribution_version | split('.') | first }}.noarch.rpm"
+        state: present
+      when: ansible_os_family == 'RedHat'
+
+    - name: Instalar paquete zabbix-agent2
+      ansible.builtin.package:
+        name: zabbix-agent2
+        state: present
+
+    - name: Configurar Zabbix Agent 2 (Server, ServerActive y Hostname)
+      ansible.builtin.template:
+        src: zabbix_agent2.conf.j2
+        dest: /etc/zabbix/zabbix_agent2.conf
+      notify: Reiniciar zabbix-agent2
+
+    - name: Iniciar y habilitar servicio
+      ansible.builtin.service:
+        name: zabbix-agent2
+        state: started
+        enabled: yes
+
+    - name: Registrar automáticamente el host en la consola Zabbix
+      community.zabbix.zabbix_host:
+        server_url: "{{ zabbix_api_url }}"
+        login_user: "{{ zabbix_api_user }}"
+        login_password: "{{ zabbix_api_pass }}"
+        host_name: "{{ inventory_hostname }}"
+        visible_name: "{{ inventory_hostname }}"
+        status: enabled
+        interfaces:
+          - type: 1
+            main: 1
+            useip: 1
+            ip: "{{ ansible_default_ipv4.address }}"
+            port: 10050
+        templates:
+          - Linux by Zabbix Agent
+        groups:
+          - Linux Servers
+        state: present
+      delegate_to: localhost
+      run_once: yes
+
+  handlers:
+    - name: Reiniciar zabbix-agent2
+      ansible.builtin.service:
+        name: zabbix-agent2
+        state: restarted
