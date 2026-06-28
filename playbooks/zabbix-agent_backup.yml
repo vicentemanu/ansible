@@ -1,0 +1,106 @@
+---
+- name: Instalar Zabbix Agent 2 en Linux (Debian + RedHat) y registrar en Zabbix
+  hosts: nodos
+  become: yes
+
+  vars:
+    zabbix_version: "7.0"
+    zabbix_server_ip: "192.168.1.103"
+    zabbix_api_url: "http://{{ zabbix_server_ip }}/zabbix"
+    zabbix_api_user: "Admin"
+    zabbix_api_pass: "Churrita10."
+    zabbix_deb_url: "https://repo.zabbix.com/zabbix/{{ zabbix_version }}/ubuntu/pool/main/z/zabbix-release/zabbix-release_latest_{{ zabbix_version }}+ubuntu{{ ansible_distribution_version }}_all.deb"
+    zabbix_rpm_url: "https://repo.zabbix.com/zabbix/{{ zabbix_version }}/rhel/{{ ansible_distribution_major_version }}/x86_64/zabbix-agent2-{{ zabbix_version }}-1.el{{ ansible_distribution_major_version }}.x86_64.rpm"
+
+    zabbix_pkg_path: "/tmp/"
+
+  tasks:
+
+        # -------------------------
+    # DOWNLOAD DEBIAN
+    # -------------------------
+    - name: Descargar Zabbix Agent 2 (Debian/Ubuntu)
+      ansible.builtin.get_url:
+        url: "{{ zabbix_deb_url }}"
+        dest: "{{ zabbix_pkg_path }}" # Guardará automáticamente con el nombre real del archivo remoto
+        mode: '0644'
+      when: ansible_os_family == "Debian"
+      register: deb_download # Registramos el resultado para saber el nombre exacto del archivo
+
+    # -------------------------
+    # DOWNLOAD REDHAT
+    # -------------------------
+    - name: Descargar Zabbix Agent 2 (RedHat/CentOS/Rocky/Alma)
+      ansible.builtin.get_url:
+        url: "{{ zabbix_rpm_url }}"
+        dest: "{{ zabbix_pkg_path }}"
+        mode: '0644'
+      when: ansible_os_family == "RedHat"
+      register: rpm_download
+
+    # -------------------------
+    # INSTALL DEBIAN
+    # -------------------------
+    - name: Instalar Zabbix Agent 2 en Debian/Ubuntu
+      ansible.builtin.apt:
+        deb: "{{ deb_download.dest }}" # Usa dinámicamente la ruta exacta donde se guardó el archivo
+        state: present
+      when: ansible_os_family == "Debian" and deb_download.changed
+
+
+    # -------------------------
+    # INSTALL REDHAT
+    # -------------------------
+    - name: Instalar Zabbix Agent 2 en RedHat
+      ansible.builtin.yum:
+        name: "{{ zabbix_pkg_path }}"
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    # -------------------------
+    # CONFIGURACIÓN
+    # -------------------------
+    - name: Configurar Zabbix Agent 2
+      ansible.builtin.template:
+        src: zabbix_agent2.conf.j2
+        dest: /etc/zabbix/zabbix_agent2.conf
+      notify: restart zabbix-agent2
+
+    # -------------------------
+    # SERVICIO
+    # -------------------------
+    - name: Habilitar y arrancar Zabbix Agent
+      ansible.builtin.service:
+        name: zabbix-agent2
+        state: started
+        enabled: yes
+
+    # -------------------------
+    # REGISTRO EN ZABBIX
+    # -------------------------
+    - name: Registrar host en Zabbix
+      community.zabbix.zabbix_host:
+        server_url: "{{ zabbix_api_url }}"
+        login_user: "{{ zabbix_api_user }}"
+        login_password: "{{ zabbix_api_pass }}"
+        host_name: "{{ inventory_hostname }}"
+        visible_name: "{{ inventory_hostname }}"
+        status: enabled
+        interfaces:
+          - type: 1
+            main: 1
+            useip: 1
+            ip: "{{ ansible_default_ipv4.address }}"
+            port: 10050
+        groups:
+          - Linux Servers
+        templates:
+          - Linux by Zabbix Agent
+        state: present
+      delegate_to: localhost
+
+  handlers:
+    - name: restart zabbix-agent2
+      ansible.builtin.service:
+        name: zabbix-agent2
+        state: restarted
