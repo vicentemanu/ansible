@@ -24,7 +24,7 @@
       url: "{{ zabbix_deb_url }}"
       dest: "{{ zabbix_pkg_path }}zabbix-release_latest_{{ zabbix_version }}+ubuntu{{ ansible_distribution_version }}_all.deb"
       mode: '0644'
-    when: ansible_os_family == "Debian"
+      when: ansible_os_family == "Debian"
 
     # -------------------------
     # DOWNLOAD REDHAT
