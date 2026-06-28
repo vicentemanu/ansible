@@ -41,7 +41,8 @@
     # -------------------------
     - name: Instalar Zabbix Agent 2 en Debian/Ubuntu
       ansible.builtin.apt:
-        deb: "{{ zabbix_pkg_path }}"
+        deb: "{{ zabbix_pkg_path }}zabbix-release_latest_{{ zabbix_version }}+ubuntu{{ ansible_distribution_version }}_all.deb"
+        state: present
       when: ansible_os_family == "Debian"
 
     # -------------------------
