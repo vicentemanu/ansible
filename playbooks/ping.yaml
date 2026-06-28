@@ -1,0 +1,6 @@
+---
+- name: Play para ping
+  hosts: all
+  tasks:
+  - name: hacet un ping
+    ansible.builtin.ping:

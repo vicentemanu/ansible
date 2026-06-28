@@ -1,0 +1,195 @@
+---
+- name: Hardening SSH Linux
+  hosts: all
+  become: true
+
+  vars:
+    ssh_key_path: /root/.ssh/id_rsa
+
+  tasks:
+    - name: Obtener fecha para backup
+      set_fact:
+        backup_date: "{{ ansible_date_time.year }}{{ ansible_date_time.month }}{{ ansible_date_time.day }}_{{ ansible_date_time.hour }}{{ ansible_date_time.minute }}{{ ansible_date_time.second }}"
+
+    - name: Backup de sshd_config
+      copy:
+        src: /etc/ssh/sshd_config
+        dest: "/etc/ssh/sshd_config.{{ backup_date }}.bak"
+        remote_src: yes
+        owner: root
+        group: root
+        mode: '0600'
+
+    - name: Crear directorio SSH de root
+      file:
+        path: /root/.ssh
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+
+    - name: Verificar si existe clave SSH
+      stat:
+        path: "{{ ssh_key_path }}"
+      register: ssh_key
+
+    - name: Generar clave SSH si no existe
+      openssh_keypair:
+        path: "{{ ssh_key_path }}"
+        type: rsa
+        size: 4096
+        owner: root
+        group: root
+        mode: '0600'
+      when: not ssh_key.stat.exists
+
+    - name: Configurar Protocol
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?Protocol'
+        line: 'Protocol 2'
+      notify: restart ssh
+
+    - name: Deshabilitar login root
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin'
+        line: 'PermitRootLogin no'
+      notify: restart ssh
+
+    - name: Deshabilitar autenticación por contraseña
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+      notify: restart ssh
+
+    - name: Deshabilitar ChallengeResponseAuthentication
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?ChallengeResponseAuthentication'
+        line: 'ChallengeResponseAuthentication no'
+      notify: restart ssh
+
+    - name: Deshabilitar autenticación vacía
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitEmptyPasswords'
+        line: 'PermitEmptyPasswords no'
+      notify: restart ssh
+
+    - name: Limitar intentos de autenticación
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?MaxAuthTries'
+        line: 'MaxAuthTries 3'
+      notify: restart ssh
+
+    - name: Limitar sesiones simultáneas
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?MaxSessions'
+        line: 'MaxSessions 5'
+      notify: restart ssh
+
+    - name: Configurar timeout de inactividad
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?ClientAliveInterval'
+        line: 'ClientAliveInterval 300'
+      notify: restart ssh
+
+    - name: Configurar número máximo de timeouts
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?ClientAliveCountMax'
+        line: 'ClientAliveCountMax 2'
+      notify: restart ssh
+
+    - name: Deshabilitar X11 Forwarding
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?X11Forwarding'
+        line: 'X11Forwarding no'
+      notify: restart ssh
+
+    - name: Ignorar rhosts
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?IgnoreRhosts'
+        line: 'IgnoreRhosts yes'
+      notify: restart ssh
+
+    - name: Deshabilitar HostBasedAuthentication
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?HostbasedAuthentication'
+        line: 'HostbasedAuthentication no'
+      notify: restart ssh
+
+    - name: Registrar último login
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PrintLastLog'
+        line: 'PrintLastLog yes'
+      notify: restart ssh
+
+    - name: Deshabilitar DNS lookup
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?UseDNS'
+        line: 'UseDNS no'
+      notify: restart ssh
+
+    - name: Configurar nivel de logs
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?LogLevel'
+        line: 'LogLevel VERBOSE'
+      notify: restart ssh
+
+    - name: Validar configuración SSH
+      command: sshd -t
+      changed_when: false
+
+    - name: Configurar algoritmos KEX
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?KexAlgorithms'
+        line: 'KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512'
+      notify: restart ssh
+
+    - name: Configurar algoritmos Cipher
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?Ciphers'
+        line: 'Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr'
+      notify: restart ssh
+
+    - name: Configurar algoritmos MAC
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?MACs'
+        line: 'MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com'
+      notify: restart ssh
+
+    - name: Configurar algoritmos HostKey
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?HostKeyAlgorithms'
+        line: 'HostKeyAlgorithms ssh-ed25519,rsa-sha2-512,rsa-sha2-256'
+      notify: restart ssh
+
+    - name: Configurar algoritmos de clave pública aceptados
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PubkeyAcceptedAlgorithms'
+        line: 'PubkeyAcceptedAlgorithms ssh-ed25519,rsa-sha2-512,rsa-sha2-256'
+      notify: restart ssh
+
+  handlers:
+
+    - name: restart ssh
+      service:
+        name: "{{ 'sshd' if ansible_os_family == 'RedHat' else 'ssh' }}"
+        state: restarted
