@@ -22,7 +22,7 @@
     - name: Descargar Zabbix Agent 2 (Debian/Ubuntu)
       ansible.builtin.get_url:
         url: "{{ zabbix_deb_url }}"
-        dest: "{{ zabbix_pkg_path }}"
+        dest: "{{ zabbix_pkg_path }}zabbix-release_latest_{{ zabbix_version }}+ubuntu{{ ansible_distribution_version }}_all.deb"  # Se recomienda incluir el nombre del archivo final
         mode: '0644'
       when: ansible_os_family == "Debian"
 
