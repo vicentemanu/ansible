@@ -28,6 +28,7 @@
       ansible.builtin.apt:
             update_cache: yes
       when: ansible_os_family == "Debian"
+      become: yes
 
     # -------------------------
     # CONFIGURACIÓN REPOSITORIO REDHAT/CENTOS/ROCKY
@@ -38,7 +39,7 @@
         state: present
         disable_gpg_check: yes
       when: ansible_os_family == "RedHat"
-
+  
     # -------------------------
     # INSTALACIÓN DEL AGENTE (Paquete nativo)
     # -------------------------
