@@ -60,7 +60,6 @@
     # -------------------------
     # CONFIGURACIÓN
     # -------------------------
-    block:
     - name: Configurar Zabbix Agent 2
       ansible.builtin.template:
         src: zabbix_agent2.conf.j2
@@ -71,7 +70,6 @@
     # -------------------------
     # SERVICIO
     # -------------------------
-    block:
     - name: Habilitar y arrancar Zabbix Agent 2
       ansible.builtin.service:
         name: zabbix-agent2
